@@ -140,6 +140,12 @@
     padding: 16px 12px;
     text-align: center;
   }
+  .cube.clickable {
+    cursor: pointer;
+    transition: transform .12s, border-color .12s;
+  }
+  .cube.clickable:hover { border-color: #6a9fd8; transform: translateY(-1px); }
+  .cube.clickable.active { border-color: #6a9fd8; border-width: 2px; background: linear-gradient(135deg, #1b2c4d 0%, #223a63 100%); }
   .cube .num {
     font-size: 26px;
     font-weight: 800;
@@ -223,6 +229,19 @@
   }
   a.key-link:hover { text-decoration: underline; }
 
+  .table-wrap.hide-business .col-business { display: none; }
+  .biz-cell { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .biz-cell a.epic-link {
+    font-size: 10.5px;
+    color: #6ad0b0;
+    border: 1px solid #2a5346;
+    border-radius: 8px;
+    padding: 1px 6px;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .biz-cell a.epic-link:hover { background: #17342c; }
+
   .src-badge {
     display: inline-block;
     border-radius: 8px;
@@ -294,7 +313,7 @@
   <a href="https://arbox.atlassian.net/jira/software/projects/ECS/boards" target="_blank" rel="noopener">Enterprise Customers - Sivan (ECS)</a>
   + טיקטי פיתוח/מוצר מקושרים מ-<a href="https://arbox.atlassian.net/jira/software/projects/RD/boards" target="_blank" rel="noopener">RD</a>
   ומ-<a href="https://arbox.atlassian.net/jira/software/projects/PM/boards" target="_blank" rel="noopener">PM</a>
-  · מתעדכן אוטומטית מ-Jira · עדכון אחרון: 2026-09-18 11:15 UTC
+  · מתעדכן אוטומטית מ-Jira · עדכון אחרון: 2026-09-18 11:21 UTC
 </div>
 
 <div class="biz-search-wrap">
@@ -320,6 +339,7 @@
     <tr>
       <th data-key="key">מפתח <span class="arrow">▾</span></th>
       <th data-key="summary">כותרת <span class="arrow">▾</span></th>
+      <th data-key="business" class="col-business">עסק <span class="arrow">▾</span></th>
       <th data-key="source">אנטרפרייז / פיתוח / מוצר <span class="arrow">▾</span></th>
       <th data-key="status">סטטוס <span class="arrow">▾</span></th>
       <th data-key="issuetype">סוג <span class="arrow">▾</span></th>
@@ -346,7 +366,7 @@ const DATA = {"tickets":[{"key":"ECS-17","summary":"הקפאות לא מוריד
 const SOURCE_LABEL = { ECS: 'אנטרפרייז', RD: 'פיתוח', PM: 'מוצר' };
 const BUSINESSES = DATA.businesses.filter(b => b.norm !== '__none__');
 
-let state = { search: '', status: '', biz: '', sortKey: 'updated', sortDir: -1 };
+let state = { search: '', status: '', biz: '', bucket: '', showAll: false, sortKey: 'updated', sortDir: -1 };
 let suggestIndex = -1;
 let currentSuggestions = [];
 
@@ -382,20 +402,27 @@ function renderCubes() {
   const byBucket = { todo: 0, inprogress: 0, done: 0 };
   scoped.forEach(t => byBucket[ticketBucket(t)]++);
   const cubes = [
-    { cls: 'total', num: scoped.length, lbl: 'סה"כ טיקטים' },
-    { cls: 'backlog', num: byBucket.todo, lbl: 'לטיפול (Backlog)' },
-    { cls: 'progress', num: byBucket.inprogress, lbl: 'בתהליך' },
-    { cls: 'done', num: byBucket.done, lbl: 'בוצע' },
+    { cls: 'total', bucket: '', num: scoped.length, lbl: 'סה"כ טיקטים' },
+    { cls: 'backlog', bucket: 'todo', num: byBucket.todo, lbl: 'לטיפול (Backlog)' },
+    { cls: 'progress', bucket: 'inprogress', num: byBucket.inprogress, lbl: 'בתהליך' },
+    { cls: 'done', bucket: 'done', num: byBucket.done, lbl: 'בוצע' },
   ];
   if (state.biz) {
     const devCount = scoped.filter(t => t.source && t.source !== 'ECS').length;
-    cubes.push({ cls: 'biz', num: devCount, lbl: 'טיקטי פיתוח/מוצר' });
+    cubes.push({ cls: 'biz', bucket: 'devproduct', num: devCount, lbl: 'טיקטי פיתוח/מוצר' });
   } else {
-    cubes.push({ cls: 'biz', num: BUSINESSES.length, lbl: 'עסקים' });
+    cubes.push({ cls: 'biz', bucket: '', num: BUSINESSES.length, lbl: 'עסקים' });
   }
   document.getElementById('cubes').innerHTML = cubes.map(c =>
-    `<div class="cube ${c.cls}"><div class="num">${c.num}</div><div class="lbl">${c.lbl}</div></div>`
+    `<div class="cube ${c.cls} clickable${(c.bucket && state.bucket === c.bucket) ? ' active' : ''}" data-bucket="${c.bucket}"><div class="num">${c.num}</div><div class="lbl">${c.lbl}</div></div>`
   ).join('');
+  document.querySelectorAll('#cubes .cube').forEach(el => {
+    el.onclick = () => {
+      state.bucket = el.dataset.bucket;
+      state.showAll = true;
+      renderAll();
+    };
+  });
 }
 
 function renderControls() {
@@ -448,6 +475,7 @@ function setupBizSearch() {
 
   function selectBusiness(b) {
     state.biz = b.norm;
+    state.bucket = '';
     input.value = b.label;
     hideSuggestions();
     renderActivePill();
@@ -457,6 +485,8 @@ function setupBizSearch() {
 
   function clearBusiness() {
     state.biz = '';
+    state.bucket = '';
+    state.showAll = false;
     input.value = '';
     clearBtn.hidden = true;
     renderActivePill();
@@ -521,8 +551,15 @@ function renderActivePill() {
   box.hidden = false;
 }
 
+function matchesBucket(t) {
+  if (!state.bucket) return true;
+  if (state.bucket === 'devproduct') return !!(t.source && t.source !== 'ECS');
+  return ticketBucket(t) === state.bucket;
+}
+
 function filteredSorted() {
   let rows = bizScopedTickets().filter(t => {
+    if (!matchesBucket(t)) return false;
     if (state.status && t.status !== state.status) return false;
     if (state.search) {
       const hay = (t.key + ' ' + t.summary).toLowerCase();
@@ -548,11 +585,14 @@ function renderRows() {
   const tableWrap = document.getElementById('tableWrap');
   const emptyState = document.getElementById('emptyState');
 
-  if (!state.biz) {
+  const tableVisible = !!state.biz || state.showAll;
+  tableWrap.classList.toggle('hide-business', !!state.biz);
+
+  if (!tableVisible) {
     controlsRow.hidden = true;
     tableWrap.hidden = true;
     emptyState.hidden = false;
-    emptyState.innerHTML = '<div class="empty-state-icon">🔍</div><div>בחרי עסק למעלה כדי לראות את הטיקטים שלו</div>';
+    emptyState.innerHTML = '<div class="empty-state-icon">🔍</div><div>בחרי עסק למעלה, או לחצי על אחד המספרים, כדי לראות את הטיקטים</div>';
     return;
   }
   controlsRow.hidden = false;
@@ -572,9 +612,14 @@ function renderRows() {
     const srcLabel = SOURCE_LABEL[t.source] || t.source || '';
     const statusCls = ticketBucket(t);
     const prio = t.priority ? `<span class="prio ${t.priority}">${t.priority}</span>` : '';
+    const meta = bizMeta(t.businessNorm);
+    const epicLink = meta && meta.epicKey
+      ? `<a class="epic-link" href="${jiraUrl(meta.epicKey)}" target="_blank" rel="noopener">${meta.epicKey}</a>`
+      : '';
     return `<tr>
       <td><a class="key-link" href="${jiraUrl(t.key)}" target="_blank" rel="noopener">${t.key}</a></td>
       <td>${escapeHtml(t.summary)}</td>
+      <td class="col-business"><div class="biz-cell"><span>${escapeHtml(t.business)}</span>${epicLink}</div></td>
       <td><span class="src-badge ${t.source}">${escapeHtml(srcLabel)}</span></td>
       <td><span class="badge ${statusCls}">${escapeHtml(t.status)}</span></td>
       <td>${escapeHtml(t.issuetype)}</td>
