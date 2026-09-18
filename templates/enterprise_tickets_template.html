@@ -30,12 +30,108 @@
   .subtitle a { color: #8fc2f0; text-decoration: none; }
   .subtitle a:hover { text-decoration: underline; }
 
+  .biz-search-wrap {
+    max-width: 640px;
+    margin: 0 auto 24px;
+    position: relative;
+  }
+  .biz-search-box {
+    display: flex;
+    gap: 8px;
+  }
+  .biz-search-box input {
+    flex: 1;
+    background: #16233d;
+    border: 2px solid #3a5488;
+    color: #e6ecf7;
+    border-radius: 12px;
+    padding: 13px 16px;
+    font-size: 15px;
+    font-family: Arial, sans-serif;
+  }
+  .biz-search-box input:focus {
+    outline: none;
+    border-color: #6a9fd8;
+  }
+  .biz-clear {
+    background: #1c3a2c;
+    border: 1px solid #2a5346;
+    color: #6ad89a;
+    border-radius: 10px;
+    padding: 0 14px;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: Arial, sans-serif;
+  }
+  .biz-clear:hover { background: #21432f; }
+  .biz-suggest {
+    position: absolute;
+    inset-inline: 0;
+    top: calc(100% + 6px);
+    background: #16233d;
+    border: 1px solid #2a3f66;
+    border-radius: 12px;
+    max-height: 320px;
+    overflow-y: auto;
+    z-index: 20;
+    box-shadow: 0 12px 28px rgba(0,0,0,.45);
+  }
+  .biz-suggest-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 14px;
+    cursor: pointer;
+    font-size: 13.5px;
+    border-bottom: 1px solid #1f2f4d;
+  }
+  .biz-suggest-item:last-child { border-bottom: none; }
+  .biz-suggest-item:hover, .biz-suggest-item.hl { background: #1c2f52; }
+  .biz-suggest-item .cnt { color: #8fa5c4; font-size: 11.5px; }
+  .biz-suggest-empty {
+    padding: 14px;
+    text-align: center;
+    color: #6f84a8;
+    font-size: 13px;
+  }
+  .biz-active {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .biz-active .pill {
+    background: linear-gradient(90deg, #c8b08a 0%, #7a9ed8 100%);
+    color: #1a1a1a;
+    font-weight: 800;
+    font-size: 14px;
+    padding: 6px 16px;
+    border-radius: 20px;
+  }
+  .biz-active a.epic-link {
+    font-size: 12px;
+    color: #6ad0b0;
+    border: 1px solid #2a5346;
+    border-radius: 8px;
+    padding: 3px 10px;
+    text-decoration: none;
+  }
+  .biz-active a.epic-link:hover { background: #17342c; }
+
   .cubes {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     gap: 14px;
     max-width: 1200px;
     margin: 0 auto 26px;
+  }
+  @media (max-width: 640px) {
+    .cubes { grid-template-columns: repeat(2, 1fr); }
   }
   .cube {
     background: linear-gradient(135deg, #16233d 0%, #1b2c4d 100%);
@@ -107,15 +203,18 @@
   .biz-chip.active { background: #6a9fd8; color: #0f1a2e; border-color: #6a9fd8; font-weight: 700; }
   .biz-chip .n { opacity: .7; font-size: 11px; }
 
-  table {
-    width: 100%;
+  .table-wrap {
     max-width: 1200px;
     margin: 0 auto;
+    overflow-x: auto;
+    border-radius: 12px;
+  }
+  table {
+    width: 100%;
+    min-width: 760px;
     border-collapse: collapse;
     font-size: 13px;
     background: #131f38;
-    border-radius: 12px;
-    overflow: hidden;
   }
   thead th {
     background: linear-gradient(90deg, #c8b08a 0%, #7a9ed8 100%);
@@ -155,6 +254,15 @@
     white-space: nowrap;
   }
   .biz-cell a.epic-link:hover { background: #17342c; }
+  .src-tag {
+    font-size: 10px;
+    font-weight: 800;
+    padding: 1px 6px;
+    border-radius: 6px;
+    white-space: nowrap;
+  }
+  .src-tag.RD { background: #2a2050; color: #b0a0f0; }
+  .src-tag.PM { background: #202f50; color: #a0c0f0; }
 
   .badge {
     display: inline-block;
@@ -194,22 +302,33 @@
 
 <h1>Enterprise Customers — לוח טיקטים</h1>
 <div class="subtitle">
-  כל הטיקטים מהבורד
+  טיקטים מהבורד
   <a href="https://arbox.atlassian.net/jira/software/projects/ECS/boards" target="_blank" rel="noopener">Enterprise Customers - Sivan (ECS)</a>
+  + טיקטי פיתוח/מוצר מקושרים מ-<a href="https://arbox.atlassian.net/jira/software/projects/RD/boards" target="_blank" rel="noopener">RD</a>
+  ומ-<a href="https://arbox.atlassian.net/jira/software/projects/PM/boards" target="_blank" rel="noopener">PM</a>
   · מתעדכן אוטומטית מ-Jira · עדכון אחרון: __UPDATED_AT__
+</div>
+
+<div class="biz-search-wrap">
+  <div class="biz-search-box">
+    <input id="bizSearch" type="text" autocomplete="off" placeholder="חפשי עסק כדי לראות רק אותו ואת הטיקטים שלו…">
+    <button type="button" id="bizClear" class="biz-clear" hidden>הצג הכל ✕</button>
+  </div>
+  <div class="biz-suggest" id="bizSuggest" hidden></div>
+  <div class="biz-active" id="bizActive" hidden></div>
 </div>
 
 <div class="cubes" id="cubes"></div>
 
 <div class="controls">
-  <input id="search" type="text" placeholder="חיפוש לפי מפתח, כותרת או עסק…">
+  <input id="search" type="text" placeholder="חיפוש לפי מפתח או כותרת…">
   <select id="statusFilter"></select>
-  <select id="bizSelect"></select>
   <span class="count-note" id="countNote"></span>
 </div>
 
 <div class="biz-strip" id="bizStrip"></div>
 
+<div class="table-wrap">
 <table>
   <thead>
     <tr>
@@ -224,33 +343,48 @@
   </thead>
   <tbody id="rows"></tbody>
 </table>
+</div>
 
 <footer>
-  __TOTAL__ טיקטים · __BIZCOUNT__ עסקים · חלק מהעסקים מופיעים ביותר מרשומה אחת עקב הבדלי כתיב/רישיות בשדה "Project" בג'ירה — לא בוצע מיזוג אוטומטי כדי לא לסכן שיוך שגוי.
+  __TOTAL__ טיקטים · __BIZCOUNT__ עסקים · חלק מהעסקים מופיעים ביותר מרשומה אחת עקב הבדלי כתיב/רישיות בשדה "Project" בג'ירה — לא בוצע מיזוג אוטומטי כדי לא לסכן שיוך שגוי. טיקטים מ-RD/PM מוצגים כשהם מקושרים לאפיק של העסק דרך קישור Polaris, וייתכן שאותו טיקט יופיע תחת כמה עסקים אם הוא רלוונטי ליותר מלקוח אחד.
 </footer>
 
 <script>
 const DATA = __DATA_JSON__;
 
-const STATUS_CAT_LABEL = { 'To Do': 'לטיפול', 'In Progress': 'בתהליך', 'Done': 'בוצע' };
 const STATUS_CAT_CLASS = { 'To Do': 'todo', 'In Progress': 'inprogress', 'Done': 'done' };
+const BUSINESSES = DATA.businesses.filter(b => b.norm !== '__none__');
 
 let state = { search: '', status: '', biz: '', sortKey: 'business', sortDir: 1 };
+let suggestIndex = -1;
+let currentSuggestions = [];
 
 function jiraUrl(key) { return 'https://arbox.atlassian.net/browse/' + key; }
 
+function bizMeta(norm) {
+  return DATA.businesses.find(b => b.norm === norm);
+}
+
+function bizScopedTickets() {
+  return state.biz ? DATA.tickets.filter(t => t.businessNorm === state.biz) : DATA.tickets;
+}
+
 function renderCubes() {
-  const total = DATA.tickets.length;
+  const scoped = bizScopedTickets();
   const byCat = {};
-  DATA.tickets.forEach(t => byCat[t.statusCategory] = (byCat[t.statusCategory]||0) + 1);
-  const bizCount = DATA.businesses.filter(b => b.norm !== '__none__').length;
+  scoped.forEach(t => byCat[t.statusCategory] = (byCat[t.statusCategory]||0) + 1);
   const cubes = [
-    { cls: 'total', num: total, lbl: 'סה"כ טיקטים' },
+    { cls: 'total', num: scoped.length, lbl: 'סה"כ טיקטים' },
     { cls: 'backlog', num: byCat['To Do']||0, lbl: 'לטיפול (Backlog)' },
     { cls: 'progress', num: byCat['In Progress']||0, lbl: 'בתהליך' },
     { cls: 'done', num: byCat['Done']||0, lbl: 'בוצע' },
-    { cls: 'biz', num: bizCount, lbl: 'עסקים' },
   ];
+  if (state.biz) {
+    const devCount = scoped.filter(t => t.source && t.source !== 'ECS').length;
+    cubes.push({ cls: 'biz', num: devCount, lbl: 'טיקטי פיתוח/מוצר' });
+  } else {
+    cubes.push({ cls: 'biz', num: BUSINESSES.length, lbl: 'עסקים' });
+  }
   document.getElementById('cubes').innerHTML = cubes.map(c =>
     `<div class="cube ${c.cls}"><div class="num">${c.num}</div><div class="lbl">${c.lbl}</div></div>`
   ).join('');
@@ -263,36 +397,140 @@ function renderControls() {
     statuses.map(s => `<option value="${s}">${s}</option>`).join('');
   statusSel.onchange = () => { state.status = statusSel.value; renderAll(); };
 
-  const bizSel = document.getElementById('bizSelect');
-  bizSel.innerHTML = '<option value="">כל העסקים</option>' +
-    DATA.businesses.filter(b => b.norm !== '__none__').map(b =>
-      `<option value="${b.norm}">${b.label} (${b.count})</option>`).join('');
-  bizSel.onchange = () => { state.biz = bizSel.value; syncChips(); renderAll(); };
-
   document.getElementById('search').oninput = (e) => { state.search = e.target.value.trim().toLowerCase(); renderAll(); };
 
   document.querySelectorAll('thead th').forEach(th => {
-    th.onclick = () => {
+    th.tabIndex = 0;
+    const activate = () => {
       const k = th.dataset.key;
       if (state.sortKey === k) state.sortDir *= -1; else { state.sortKey = k; state.sortDir = 1; }
       renderAll();
     };
+    th.onclick = activate;
+    th.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(); } };
   });
+
+  setupBizSearch();
+}
+
+function setupBizSearch() {
+  const input = document.getElementById('bizSearch');
+  const suggestBox = document.getElementById('bizSuggest');
+  const clearBtn = document.getElementById('bizClear');
+
+  function showSuggestions(list) {
+    currentSuggestions = list;
+    suggestIndex = -1;
+    if (!list.length) {
+      suggestBox.innerHTML = '<div class="biz-suggest-empty">לא נמצא עסק תואם</div>';
+    } else {
+      suggestBox.innerHTML = list.map((b, i) =>
+        `<div class="biz-suggest-item" data-i="${i}"><span>${escapeHtml(b.label)}</span><span class="cnt">${b.count} טיקטים</span></div>`
+      ).join('');
+    }
+    suggestBox.hidden = false;
+  }
+
+  function hideSuggestions() {
+    suggestBox.hidden = true;
+    suggestBox.innerHTML = '';
+    currentSuggestions = [];
+    suggestIndex = -1;
+  }
+
+  function selectBusiness(b) {
+    state.biz = b.norm;
+    input.value = b.label;
+    hideSuggestions();
+    syncChips();
+    renderActivePill();
+    clearBtn.hidden = false;
+    renderAll();
+  }
+
+  function clearBusiness() {
+    state.biz = '';
+    input.value = '';
+    clearBtn.hidden = true;
+    syncChips();
+    renderActivePill();
+    hideSuggestions();
+    renderAll();
+  }
+
+  function highlight(i) {
+    suggestBox.querySelectorAll('.biz-suggest-item').forEach(el => el.classList.remove('hl'));
+    if (i >= 0 && i < currentSuggestions.length) {
+      const el = suggestBox.querySelector(`[data-i="${i}"]`);
+      if (el) { el.classList.add('hl'); el.scrollIntoView({ block: 'nearest' }); }
+    }
+    suggestIndex = i;
+  }
+
+  input.oninput = () => {
+    const q = input.value.trim().toLowerCase();
+    const list = (q ? BUSINESSES.filter(b => b.label.toLowerCase().includes(q)) : BUSINESSES.slice(0, 20))
+      .slice(0, 20);
+    showSuggestions(list);
+  };
+
+  input.onfocus = () => {
+    if (!input.value.trim()) {
+      showSuggestions(BUSINESSES.slice(0, 20));
+    } else {
+      input.oninput();
+    }
+  };
+
+  input.onkeydown = (e) => {
+    if (suggestBox.hidden) return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); highlight(Math.min(suggestIndex + 1, currentSuggestions.length - 1)); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); highlight(Math.max(suggestIndex - 1, 0)); }
+    else if (e.key === 'Enter') { e.preventDefault(); if (suggestIndex >= 0) selectBusiness(currentSuggestions[suggestIndex]); }
+    else if (e.key === 'Escape') { hideSuggestions(); }
+  };
+
+  suggestBox.onclick = (e) => {
+    const item = e.target.closest('.biz-suggest-item');
+    if (!item) return;
+    selectBusiness(currentSuggestions[parseInt(item.dataset.i)]);
+  };
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.biz-search-wrap')) hideSuggestions();
+  });
+
+  clearBtn.onclick = clearBusiness;
+
+  window.__selectBizByNorm = (norm) => {
+    const b = bizMeta(norm);
+    if (b) selectBusiness(b);
+  };
+  window.__clearBiz = clearBusiness;
+}
+
+function renderActivePill() {
+  const box = document.getElementById('bizActive');
+  if (!state.biz) { box.hidden = true; box.innerHTML = ''; return; }
+  const meta = bizMeta(state.biz);
+  if (!meta) { box.hidden = true; return; }
+  const epicLink = meta.epicKey
+    ? `<a class="epic-link" href="${jiraUrl(meta.epicKey)}" target="_blank" rel="noopener">אפיק ${meta.epicKey} בג'ירה</a>`
+    : '';
+  box.innerHTML = `<span class="pill">${escapeHtml(meta.label)}</span>${epicLink}`;
+  box.hidden = false;
 }
 
 function renderChips() {
-  const top = DATA.businesses.filter(b => b.norm !== '__none__').slice(0, 14);
+  const top = BUSINESSES.slice(0, 14);
   const strip = document.getElementById('bizStrip');
   strip.innerHTML = top.map(b =>
-    `<div class="biz-chip" data-norm="${b.norm}">${b.label} <span class="n">${b.count}</span></div>`
+    `<div class="biz-chip" data-norm="${b.norm}">${escapeHtml(b.label)} <span class="n">${b.count}</span></div>`
   ).join('');
   strip.querySelectorAll('.biz-chip').forEach(chip => {
     chip.onclick = () => {
       const n = chip.dataset.norm;
-      state.biz = (state.biz === n) ? '' : n;
-      document.getElementById('bizSelect').value = state.biz;
-      syncChips();
-      renderAll();
+      if (state.biz === n) { window.__clearBiz(); } else { window.__selectBizByNorm(n); }
     };
   });
 }
@@ -301,14 +539,14 @@ function syncChips() {
   document.querySelectorAll('.biz-chip').forEach(c => {
     c.classList.toggle('active', c.dataset.norm === state.biz);
   });
+  document.getElementById('bizClear').hidden = !state.biz;
 }
 
 function filteredSorted() {
-  let rows = DATA.tickets.filter(t => {
+  let rows = bizScopedTickets().filter(t => {
     if (state.status && t.status !== state.status) return false;
-    if (state.biz && t.businessNorm !== state.biz) return false;
     if (state.search) {
-      const hay = (t.key + ' ' + t.summary + ' ' + t.business).toLowerCase();
+      const hay = (t.key + ' ' + t.summary).toLowerCase();
       if (!hay.includes(state.search)) return false;
     }
     return true;
@@ -326,10 +564,6 @@ function filteredSorted() {
   return rows;
 }
 
-function bizMeta(norm) {
-  return DATA.businesses.find(b => b.norm === norm);
-}
-
 function renderRows() {
   const rows = filteredSorted();
   document.getElementById('countNote').textContent = rows.length + ' תוצאות';
@@ -343,12 +577,13 @@ function renderRows() {
     const epicLink = meta && meta.epicKey
       ? `<a class="epic-link" href="${jiraUrl(meta.epicKey)}" target="_blank" rel="noopener">${meta.epicKey}</a>`
       : '';
+    const srcTag = (t.source && t.source !== 'ECS') ? `<span class="src-tag ${t.source}">${t.source}</span>` : '';
     const statusCls = STATUS_CAT_CLASS[t.statusCategory] || 'todo';
     const prio = t.priority ? `<span class="prio ${t.priority}">${t.priority}</span>` : '';
     return `<tr>
       <td><a class="key-link" href="${jiraUrl(t.key)}" target="_blank" rel="noopener">${t.key}</a></td>
       <td>${escapeHtml(t.summary)}</td>
-      <td><div class="biz-cell"><span>${escapeHtml(t.business)}</span>${epicLink}</div></td>
+      <td><div class="biz-cell">${srcTag}<span>${escapeHtml(t.business)}</span>${epicLink}</div></td>
       <td><span class="badge ${statusCls}">${escapeHtml(t.status)}</span></td>
       <td>${escapeHtml(t.issuetype)}</td>
       <td>${prio}</td>
@@ -362,10 +597,10 @@ function escapeHtml(s) {
 }
 
 function renderAll() {
+  renderCubes();
   renderRows();
 }
 
-renderCubes();
 renderControls();
 renderChips();
 renderAll();
