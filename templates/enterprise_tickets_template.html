@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Enterprise Customers - Tickets Dashboard</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0f1a2e;
+    font-family: Arial, sans-serif;
+    color: #e6ecf7;
+    min-height: 100vh;
+    padding: 32px 28px 60px;
+  }
+  h1 {
+    text-align: center;
+    color: #6a9fd8;
+    font-size: 30px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    letter-spacing: 0.3px;
+  }
+  .subtitle {
+    text-align: center;
+    color: #8fa5c4;
+    font-size: 13px;
+    margin-bottom: 28px;
+  }
+  .subtitle a { color: #8fc2f0; text-decoration: none; }
+  .subtitle a:hover { text-decoration: underline; }
+
+  .cubes {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 14px;
+    max-width: 1200px;
+    margin: 0 auto 26px;
+  }
+  .cube {
+    background: linear-gradient(135deg, #16233d 0%, #1b2c4d 100%);
+    border: 1px solid #2a3f66;
+    border-radius: 14px;
+    padding: 16px 12px;
+    text-align: center;
+  }
+  .cube .num {
+    font-size: 26px;
+    font-weight: 800;
+    color: #ffffff;
+  }
+  .cube .lbl {
+    font-size: 12px;
+    color: #9db3d4;
+    margin-top: 4px;
+  }
+  .cube.total .num { color: #6a9fd8; }
+  .cube.backlog .num { color: #d8a86a; }
+  .cube.progress .num { color: #c8b08a; }
+  .cube.done .num { color: #6ad89a; }
+  .cube.biz .num { color: #b08ad8; }
+
+  .controls {
+    max-width: 1200px;
+    margin: 0 auto 18px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+  }
+  .controls input, .controls select {
+    background: #16233d;
+    border: 1px solid #2a3f66;
+    color: #e6ecf7;
+    border-radius: 10px;
+    padding: 9px 12px;
+    font-size: 13px;
+    font-family: Arial, sans-serif;
+  }
+  .controls input { flex: 1; min-width: 180px; }
+  .controls select { min-width: 170px; }
+  .controls .count-note {
+    font-size: 12px;
+    color: #8fa5c4;
+    margin-inline-start: auto;
+  }
+
+  .biz-strip {
+    max-width: 1200px;
+    margin: 0 auto 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .biz-chip {
+    background: #16233d;
+    border: 1px solid #2a3f66;
+    color: #9db3d4;
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all .15s;
+  }
+  .biz-chip:hover { border-color: #6a9fd8; color: #dfe9fb; }
+  .biz-chip.active { background: #6a9fd8; color: #0f1a2e; border-color: #6a9fd8; font-weight: 700; }
+  .biz-chip .n { opacity: .7; font-size: 11px; }
+
+  table {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    border-collapse: collapse;
+    font-size: 13px;
+    background: #131f38;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  thead th {
+    background: linear-gradient(90deg, #c8b08a 0%, #7a9ed8 100%);
+    color: #1a1a1a;
+    font-weight: 800;
+    text-align: right;
+    padding: 10px 12px;
+    font-size: 12.5px;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+  }
+  thead th:hover { filter: brightness(1.08); }
+  thead th .arrow { opacity: .55; font-size: 10px; margin-inline-start: 4px; }
+  tbody td {
+    padding: 9px 12px;
+    border-bottom: 1px solid #1f2f4d;
+    vertical-align: top;
+  }
+  tbody tr:hover { background: #17274a; }
+  tbody tr:last-child td { border-bottom: none; }
+  a.key-link {
+    color: #8fc2f0;
+    text-decoration: none;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  a.key-link:hover { text-decoration: underline; }
+  .biz-cell { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .biz-cell a.epic-link {
+    font-size: 10.5px;
+    color: #6ad0b0;
+    border: 1px solid #2a5346;
+    border-radius: 8px;
+    padding: 1px 6px;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .biz-cell a.epic-link:hover { background: #17342c; }
+
+  .badge {
+    display: inline-block;
+    border-radius: 8px;
+    padding: 3px 10px;
+    font-size: 11.5px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .badge.todo { background: #3a3520; color: #d8b86a; }
+  .badge.inprogress { background: #1f3a4a; color: #6ad0e0; }
+  .badge.done { background: #1c3a2c; color: #6ad89a; }
+
+  .prio { font-size: 11px; padding: 2px 8px; border-radius: 6px; }
+  .prio.High { background: #3a2020; color: #e08a8a; }
+  .prio.Medium { background: #33301f; color: #d8c86a; }
+  .prio.Low { background: #1e3324; color: #8ad8a0; }
+  .prio.Highest { background: #401515; color: #ff9a9a; }
+  .prio.Lowest { background: #1a2a30; color: #7fb8c8; }
+
+  .empty-row td {
+    text-align: center;
+    color: #6f84a8;
+    padding: 30px;
+  }
+
+  footer {
+    max-width: 1200px;
+    margin: 22px auto 0;
+    text-align: center;
+    color: #5f7396;
+    font-size: 11.5px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Enterprise Customers — לוח טיקטים</h1>
+<div class="subtitle">
+  כל הטיקטים מהבורד
+  <a href="https://arbox.atlassian.net/jira/software/projects/ECS/boards" target="_blank" rel="noopener">Enterprise Customers - Sivan (ECS)</a>
+  · מתעדכן אוטומטית מ-Jira · עדכון אחרון: __UPDATED_AT__
+</div>
+
+<div class="cubes" id="cubes"></div>
+
+<div class="controls">
+  <input id="search" type="text" placeholder="חיפוש לפי מפתח, כותרת או עסק…">
+  <select id="statusFilter"></select>
+  <select id="bizSelect"></select>
+  <span class="count-note" id="countNote"></span>
+</div>
+
+<div class="biz-strip" id="bizStrip"></div>
+
+<table>
+  <thead>
+    <tr>
+      <th data-key="key">מפתח <span class="arrow">▾</span></th>
+      <th data-key="summary">כותרת <span class="arrow">▾</span></th>
+      <th data-key="business">עסק / בורד <span class="arrow">▾</span></th>
+      <th data-key="status">סטטוס <span class="arrow">▾</span></th>
+      <th data-key="issuetype">סוג <span class="arrow">▾</span></th>
+      <th data-key="priority">עדיפות <span class="arrow">▾</span></th>
+      <th data-key="updated">עודכן <span class="arrow">▾</span></th>
+    </tr>
+  </thead>
+  <tbody id="rows"></tbody>
+</table>
+
+<footer>
+  __TOTAL__ טיקטים · __BIZCOUNT__ עסקים · חלק מהעסקים מופיעים ביותר מרשומה אחת עקב הבדלי כתיב/רישיות בשדה "Project" בג'ירה — לא בוצע מיזוג אוטומטי כדי לא לסכן שיוך שגוי.
+</footer>
+
+<script>
+const DATA = __DATA_JSON__;
+
+const STATUS_CAT_LABEL = { 'To Do': 'לטיפול', 'In Progress': 'בתהליך', 'Done': 'בוצע' };
+const STATUS_CAT_CLASS = { 'To Do': 'todo', 'In Progress': 'inprogress', 'Done': 'done' };
+
+let state = { search: '', status: '', biz: '', sortKey: 'business', sortDir: 1 };
+
+function jiraUrl(key) { return 'https://arbox.atlassian.net/browse/' + key; }
+
+function renderCubes() {
+  const total = DATA.tickets.length;
+  const byCat = {};
+  DATA.tickets.forEach(t => byCat[t.statusCategory] = (byCat[t.statusCategory]||0) + 1);
+  const bizCount = DATA.businesses.filter(b => b.norm !== '__none__').length;
+  const cubes = [
+    { cls: 'total', num: total, lbl: 'סה"כ טיקטים' },
+    { cls: 'backlog', num: byCat['To Do']||0, lbl: 'לטיפול (Backlog)' },
+    { cls: 'progress', num: byCat['In Progress']||0, lbl: 'בתהליך' },
+    { cls: 'done', num: byCat['Done']||0, lbl: 'בוצע' },
+    { cls: 'biz', num: bizCount, lbl: 'עסקים' },
+  ];
+  document.getElementById('cubes').innerHTML = cubes.map(c =>
+    `<div class="cube ${c.cls}"><div class="num">${c.num}</div><div class="lbl">${c.lbl}</div></div>`
+  ).join('');
+}
+
+function renderControls() {
+  const statusSel = document.getElementById('statusFilter');
+  const statuses = Array.from(new Set(DATA.tickets.map(t => t.status)));
+  statusSel.innerHTML = '<option value="">כל הסטטוסים</option>' +
+    statuses.map(s => `<option value="${s}">${s}</option>`).join('');
+  statusSel.onchange = () => { state.status = statusSel.value; renderAll(); };
+
+  const bizSel = document.getElementById('bizSelect');
+  bizSel.innerHTML = '<option value="">כל העסקים</option>' +
+    DATA.businesses.filter(b => b.norm !== '__none__').map(b =>
+      `<option value="${b.norm}">${b.label} (${b.count})</option>`).join('');
+  bizSel.onchange = () => { state.biz = bizSel.value; syncChips(); renderAll(); };
+
+  document.getElementById('search').oninput = (e) => { state.search = e.target.value.trim().toLowerCase(); renderAll(); };
+
+  document.querySelectorAll('thead th').forEach(th => {
+    th.onclick = () => {
+      const k = th.dataset.key;
+      if (state.sortKey === k) state.sortDir *= -1; else { state.sortKey = k; state.sortDir = 1; }
+      renderAll();
+    };
+  });
+}
+
+function renderChips() {
+  const top = DATA.businesses.filter(b => b.norm !== '__none__').slice(0, 14);
+  const strip = document.getElementById('bizStrip');
+  strip.innerHTML = top.map(b =>
+    `<div class="biz-chip" data-norm="${b.norm}">${b.label} <span class="n">${b.count}</span></div>`
+  ).join('');
+  strip.querySelectorAll('.biz-chip').forEach(chip => {
+    chip.onclick = () => {
+      const n = chip.dataset.norm;
+      state.biz = (state.biz === n) ? '' : n;
+      document.getElementById('bizSelect').value = state.biz;
+      syncChips();
+      renderAll();
+    };
+  });
+}
+
+function syncChips() {
+  document.querySelectorAll('.biz-chip').forEach(c => {
+    c.classList.toggle('active', c.dataset.norm === state.biz);
+  });
+}
+
+function filteredSorted() {
+  let rows = DATA.tickets.filter(t => {
+    if (state.status && t.status !== state.status) return false;
+    if (state.biz && t.businessNorm !== state.biz) return false;
+    if (state.search) {
+      const hay = (t.key + ' ' + t.summary + ' ' + t.business).toLowerCase();
+      if (!hay.includes(state.search)) return false;
+    }
+    return true;
+  });
+  const k = state.sortKey, dir = state.sortDir;
+  rows = rows.slice().sort((a, b) => {
+    let av = a[k] ?? '', bv = b[k] ?? '';
+    if (k === 'key') {
+      av = parseInt(a.key.split('-')[1]); bv = parseInt(b.key.split('-')[1]);
+    }
+    if (av < bv) return -1 * dir;
+    if (av > bv) return 1 * dir;
+    return 0;
+  });
+  return rows;
+}
+
+function bizMeta(norm) {
+  return DATA.businesses.find(b => b.norm === norm);
+}
+
+function renderRows() {
+  const rows = filteredSorted();
+  document.getElementById('countNote').textContent = rows.length + ' תוצאות';
+  const tbody = document.getElementById('rows');
+  if (!rows.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="7">לא נמצאו טיקטים תואמים</td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map(t => {
+    const meta = bizMeta(t.businessNorm);
+    const epicLink = meta && meta.epicKey
+      ? `<a class="epic-link" href="${jiraUrl(meta.epicKey)}" target="_blank" rel="noopener">${meta.epicKey}</a>`
+      : '';
+    const statusCls = STATUS_CAT_CLASS[t.statusCategory] || 'todo';
+    const prio = t.priority ? `<span class="prio ${t.priority}">${t.priority}</span>` : '';
+    return `<tr>
+      <td><a class="key-link" href="${jiraUrl(t.key)}" target="_blank" rel="noopener">${t.key}</a></td>
+      <td>${escapeHtml(t.summary)}</td>
+      <td><div class="biz-cell"><span>${escapeHtml(t.business)}</span>${epicLink}</div></td>
+      <td><span class="badge ${statusCls}">${escapeHtml(t.status)}</span></td>
+      <td>${escapeHtml(t.issuetype)}</td>
+      <td>${prio}</td>
+      <td>${t.updated}</td>
+    </tr>`;
+  }).join('');
+}
+
+function escapeHtml(s) {
+  return (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function renderAll() {
+  renderRows();
+}
+
+renderCubes();
+renderControls();
+renderChips();
+renderAll();
+</script>
+</body>
+</html>

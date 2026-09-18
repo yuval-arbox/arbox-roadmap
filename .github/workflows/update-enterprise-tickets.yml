@@ -1,0 +1,40 @@
+name: Update Enterprise Customers tickets dashboard
+
+on:
+  schedule:
+    # Every 6 hours
+    - cron: "0 */6 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Rebuild dashboard from Jira
+        env:
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+        run: python3 scripts/build_enterprise_tickets.py
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- "Enterprise Customers Tickets.html"; then
+            echo "No changes in the tickets data - nothing to commit."
+            exit 0
+          fi
+          git add "Enterprise Customers Tickets.html"
+          git commit -m "Auto-update Enterprise Customers tickets dashboard"
+          git push
