@@ -164,6 +164,7 @@
     gap: 10px;
     align-items: center;
   }
+  .controls[hidden] { display: none; }
   .controls input, .controls select {
     background: #16233d;
     border: 1px solid #2a3f66;
@@ -243,26 +244,18 @@
     white-space: nowrap;
   }
   a.key-link:hover { text-decoration: underline; }
-  .biz-cell { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-  .biz-cell a.epic-link {
-    font-size: 10.5px;
-    color: #6ad0b0;
-    border: 1px solid #2a5346;
+
+  .src-badge {
+    display: inline-block;
     border-radius: 8px;
-    padding: 1px 6px;
-    text-decoration: none;
+    padding: 3px 10px;
+    font-size: 11.5px;
+    font-weight: 700;
     white-space: nowrap;
   }
-  .biz-cell a.epic-link:hover { background: #17342c; }
-  .src-tag {
-    font-size: 10px;
-    font-weight: 800;
-    padding: 1px 6px;
-    border-radius: 6px;
-    white-space: nowrap;
-  }
-  .src-tag.RD { background: #2a2050; color: #b0a0f0; }
-  .src-tag.PM { background: #202f50; color: #a0c0f0; }
+  .src-badge.ECS { background: #26406e; color: #8fc2f0; }
+  .src-badge.RD { background: #2a2050; color: #b0a0f0; }
+  .src-badge.PM { background: #202f50; color: #a0c0f0; }
 
   .badge {
     display: inline-block;
@@ -287,6 +280,23 @@
     text-align: center;
     color: #6f84a8;
     padding: 30px;
+  }
+
+  .empty-state {
+    max-width: 1200px;
+    margin: 0 auto;
+    text-align: center;
+    color: #6f84a8;
+    font-size: 15px;
+    padding: 60px 20px;
+    background: #131f38;
+    border: 1px dashed #2a3f66;
+    border-radius: 12px;
+  }
+  .empty-state-icon {
+    font-size: 30px;
+    margin-bottom: 10px;
+    opacity: .6;
   }
 
   footer {
@@ -320,21 +330,21 @@
 
 <div class="cubes" id="cubes"></div>
 
-<div class="controls">
+<div class="biz-strip" id="bizStrip"></div>
+
+<div class="controls" id="controlsRow" hidden>
   <input id="search" type="text" placeholder="חיפוש לפי מפתח או כותרת…">
   <select id="statusFilter"></select>
   <span class="count-note" id="countNote"></span>
 </div>
 
-<div class="biz-strip" id="bizStrip"></div>
-
-<div class="table-wrap">
+<div class="table-wrap" id="tableWrap" hidden>
 <table>
   <thead>
     <tr>
       <th data-key="key">מפתח <span class="arrow">▾</span></th>
       <th data-key="summary">כותרת <span class="arrow">▾</span></th>
-      <th data-key="business">עסק / בורד <span class="arrow">▾</span></th>
+      <th data-key="source">אנטרפרייז / פיתוח / מוצר <span class="arrow">▾</span></th>
       <th data-key="status">סטטוס <span class="arrow">▾</span></th>
       <th data-key="issuetype">סוג <span class="arrow">▾</span></th>
       <th data-key="priority">עדיפות <span class="arrow">▾</span></th>
@@ -345,6 +355,11 @@
 </table>
 </div>
 
+<div class="empty-state" id="emptyState">
+  <div class="empty-state-icon">🔍</div>
+  <div>בחרי עסק למעלה כדי לראות את הטיקטים שלו</div>
+</div>
+
 <footer>
   __TOTAL__ טיקטים · __BIZCOUNT__ עסקים · חלק מהעסקים מופיעים ביותר מרשומה אחת עקב הבדלי כתיב/רישיות בשדה "Project" בג'ירה — לא בוצע מיזוג אוטומטי כדי לא לסכן שיוך שגוי. טיקטים מ-RD/PM מוצגים כשהם מקושרים לאפיק של העסק דרך קישור Polaris, וייתכן שאותו טיקט יופיע תחת כמה עסקים אם הוא רלוונטי ליותר מלקוח אחד.
 </footer>
@@ -353,9 +368,10 @@
 const DATA = __DATA_JSON__;
 
 const STATUS_CAT_CLASS = { 'To Do': 'todo', 'In Progress': 'inprogress', 'Done': 'done' };
+const SOURCE_LABEL = { ECS: 'אנטרפרייז', RD: 'פיתוח', PM: 'מוצר' };
 const BUSINESSES = DATA.businesses.filter(b => b.norm !== '__none__');
 
-let state = { search: '', status: '', biz: '', sortKey: 'business', sortDir: 1 };
+let state = { search: '', status: '', biz: '', sortKey: 'updated', sortDir: -1 };
 let suggestIndex = -1;
 let currentSuggestions = [];
 
@@ -565,25 +581,38 @@ function filteredSorted() {
 }
 
 function renderRows() {
+  const controlsRow = document.getElementById('controlsRow');
+  const tableWrap = document.getElementById('tableWrap');
+  const emptyState = document.getElementById('emptyState');
+
+  if (!state.biz) {
+    controlsRow.hidden = true;
+    tableWrap.hidden = true;
+    emptyState.hidden = false;
+    emptyState.innerHTML = '<div class="empty-state-icon">🔍</div><div>בחרי עסק למעלה כדי לראות את הטיקטים שלו</div>';
+    return;
+  }
+  controlsRow.hidden = false;
+  tableWrap.hidden = false;
+
   const rows = filteredSorted();
   document.getElementById('countNote').textContent = rows.length + ' תוצאות';
   const tbody = document.getElementById('rows');
   if (!rows.length) {
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="7">לא נמצאו טיקטים תואמים</td></tr>';
+    emptyState.hidden = false;
+    emptyState.innerHTML = '<div class="empty-state-icon">🔍</div><div>לא נמצאו טיקטים תואמים לסינון הנוכחי</div>';
+    tbody.innerHTML = '';
     return;
   }
+  emptyState.hidden = true;
   tbody.innerHTML = rows.map(t => {
-    const meta = bizMeta(t.businessNorm);
-    const epicLink = meta && meta.epicKey
-      ? `<a class="epic-link" href="${jiraUrl(meta.epicKey)}" target="_blank" rel="noopener">${meta.epicKey}</a>`
-      : '';
-    const srcTag = (t.source && t.source !== 'ECS') ? `<span class="src-tag ${t.source}">${t.source}</span>` : '';
+    const srcLabel = SOURCE_LABEL[t.source] || t.source || '';
     const statusCls = STATUS_CAT_CLASS[t.statusCategory] || 'todo';
     const prio = t.priority ? `<span class="prio ${t.priority}">${t.priority}</span>` : '';
     return `<tr>
       <td><a class="key-link" href="${jiraUrl(t.key)}" target="_blank" rel="noopener">${t.key}</a></td>
       <td>${escapeHtml(t.summary)}</td>
-      <td><div class="biz-cell">${srcTag}<span>${escapeHtml(t.business)}</span>${epicLink}</div></td>
+      <td><span class="src-badge ${t.source}">${escapeHtml(srcLabel)}</span></td>
       <td><span class="badge ${statusCls}">${escapeHtml(t.status)}</span></td>
       <td>${escapeHtml(t.issuetype)}</td>
       <td>${prio}</td>
