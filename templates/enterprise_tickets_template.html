@@ -182,28 +182,6 @@
     margin-inline-start: auto;
   }
 
-  .biz-strip {
-    max-width: 1200px;
-    margin: 0 auto 20px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  .biz-chip {
-    background: #16233d;
-    border: 1px solid #2a3f66;
-    color: #9db3d4;
-    border-radius: 20px;
-    padding: 6px 14px;
-    font-size: 12px;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: all .15s;
-  }
-  .biz-chip:hover { border-color: #6a9fd8; color: #dfe9fb; }
-  .biz-chip.active { background: #6a9fd8; color: #0f1a2e; border-color: #6a9fd8; font-weight: 700; }
-  .biz-chip .n { opacity: .7; font-size: 11px; }
-
   .table-wrap {
     max-width: 1200px;
     margin: 0 auto;
@@ -330,8 +308,6 @@
 
 <div class="cubes" id="cubes"></div>
 
-<div class="biz-strip" id="bizStrip"></div>
-
 <div class="controls" id="controlsRow" hidden>
   <input id="search" type="text" placeholder="חיפוש לפי מפתח או כותרת…">
   <select id="statusFilter"></select>
@@ -367,7 +343,6 @@
 <script>
 const DATA = __DATA_JSON__;
 
-const STATUS_CAT_CLASS = { 'To Do': 'todo', 'In Progress': 'inprogress', 'Done': 'done' };
 const SOURCE_LABEL = { ECS: 'אנטרפרייז', RD: 'פיתוח', PM: 'מוצר' };
 const BUSINESSES = DATA.businesses.filter(b => b.norm !== '__none__');
 
@@ -385,15 +360,32 @@ function bizScopedTickets() {
   return state.biz ? DATA.tickets.filter(t => t.businessNorm === state.biz) : DATA.tickets;
 }
 
+// Cross-project progress bucket: a ticket's own Jira status conventions
+// differ too much between the Enterprise, RD and Product boards to trust
+// generic to-do/in-progress/done categories, so the three buckets shown
+// here are defined explicitly instead:
+//  - done: only an RD (dev) ticket whose own status is literally "Done" -
+//    that's the one signal that something was actually shipped.
+//  - inProgress: an Enterprise or Product ticket not sitting in Backlog -
+//    RD tickets are deliberately excluded here, so an RD ticket only ever
+//    counts as "done" or falls through to backlog.
+//  - backlog: everything else (by elimination).
+function ticketBucket(t) {
+  const status = (t.status || '').trim().toLowerCase();
+  if (t.source === 'RD' && status === 'done') return 'done';
+  if ((t.source === 'ECS' || t.source === 'PM') && status !== 'backlog') return 'inprogress';
+  return 'todo';
+}
+
 function renderCubes() {
   const scoped = bizScopedTickets();
-  const byCat = {};
-  scoped.forEach(t => byCat[t.statusCategory] = (byCat[t.statusCategory]||0) + 1);
+  const byBucket = { todo: 0, inprogress: 0, done: 0 };
+  scoped.forEach(t => byBucket[ticketBucket(t)]++);
   const cubes = [
     { cls: 'total', num: scoped.length, lbl: 'סה"כ טיקטים' },
-    { cls: 'backlog', num: byCat['To Do']||0, lbl: 'לטיפול (Backlog)' },
-    { cls: 'progress', num: byCat['In Progress']||0, lbl: 'בתהליך' },
-    { cls: 'done', num: byCat['Done']||0, lbl: 'בוצע' },
+    { cls: 'backlog', num: byBucket.todo, lbl: 'לטיפול (Backlog)' },
+    { cls: 'progress', num: byBucket.inprogress, lbl: 'בתהליך' },
+    { cls: 'done', num: byBucket.done, lbl: 'בוצע' },
   ];
   if (state.biz) {
     const devCount = scoped.filter(t => t.source && t.source !== 'ECS').length;
@@ -458,7 +450,6 @@ function setupBizSearch() {
     state.biz = b.norm;
     input.value = b.label;
     hideSuggestions();
-    syncChips();
     renderActivePill();
     clearBtn.hidden = false;
     renderAll();
@@ -468,7 +459,6 @@ function setupBizSearch() {
     state.biz = '';
     input.value = '';
     clearBtn.hidden = true;
-    syncChips();
     renderActivePill();
     hideSuggestions();
     renderAll();
@@ -517,12 +507,6 @@ function setupBizSearch() {
   });
 
   clearBtn.onclick = clearBusiness;
-
-  window.__selectBizByNorm = (norm) => {
-    const b = bizMeta(norm);
-    if (b) selectBusiness(b);
-  };
-  window.__clearBiz = clearBusiness;
 }
 
 function renderActivePill() {
@@ -535,27 +519,6 @@ function renderActivePill() {
     : '';
   box.innerHTML = `<span class="pill">${escapeHtml(meta.label)}</span>${epicLink}`;
   box.hidden = false;
-}
-
-function renderChips() {
-  const top = BUSINESSES.slice(0, 14);
-  const strip = document.getElementById('bizStrip');
-  strip.innerHTML = top.map(b =>
-    `<div class="biz-chip" data-norm="${b.norm}">${escapeHtml(b.label)} <span class="n">${b.count}</span></div>`
-  ).join('');
-  strip.querySelectorAll('.biz-chip').forEach(chip => {
-    chip.onclick = () => {
-      const n = chip.dataset.norm;
-      if (state.biz === n) { window.__clearBiz(); } else { window.__selectBizByNorm(n); }
-    };
-  });
-}
-
-function syncChips() {
-  document.querySelectorAll('.biz-chip').forEach(c => {
-    c.classList.toggle('active', c.dataset.norm === state.biz);
-  });
-  document.getElementById('bizClear').hidden = !state.biz;
 }
 
 function filteredSorted() {
@@ -607,7 +570,7 @@ function renderRows() {
   emptyState.hidden = true;
   tbody.innerHTML = rows.map(t => {
     const srcLabel = SOURCE_LABEL[t.source] || t.source || '';
-    const statusCls = STATUS_CAT_CLASS[t.statusCategory] || 'todo';
+    const statusCls = ticketBucket(t);
     const prio = t.priority ? `<span class="prio ${t.priority}">${t.priority}</span>` : '';
     return `<tr>
       <td><a class="key-link" href="${jiraUrl(t.key)}" target="_blank" rel="noopener">${t.key}</a></td>
@@ -631,7 +594,6 @@ function renderAll() {
 }
 
 renderControls();
-renderChips();
 renderAll();
 </script>
 </body>
